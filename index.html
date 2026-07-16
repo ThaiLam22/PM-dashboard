@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portfolio — CME Solar</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f4f3ef;--surface:#fff;--s2:#f9f8f5;--s3:#fafaf8;--ink:#1a1a1a;--ink2:#555550;--ink3:#999890;--border:#e2e0da;
+  --red:#c84b3c;--red-bg:#fdf0ee;--amber:#b06a10;--amber-bg:#fdf4e7;--green:#2e7d4f;--green-bg:#edf7f1;--blue:#1d5fa6;--blue-bg:#edf3fc;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--ink);font-size:12px;line-height:1.5;}
+.shell{max-width:1280px;margin:0 auto;padding:20px 20px 48px;}
+
+.hdr{display:flex;justify-content:space-between;align-items:flex-end;padding-bottom:14px;border-bottom:1.5px solid var(--ink);margin-bottom:16px;}
+.hdr h1{font-size:17px;font-weight:600;}.hdr p{font-size:11px;color:var(--ink3);margin-top:2px;}
+.hdr-r{text-align:right;font-size:11px;color:var(--ink3);line-height:1.7;}
+
+.kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:14px;}
+.kpi{background:var(--surface);border-radius:6px;padding:11px 14px;border-top:2px solid var(--border);}
+.kpi.g{border-top-color:var(--green);}.kpi.r{border-top-color:var(--red);}.kpi.a{border-top-color:var(--amber);}.kpi.b{border-top-color:var(--blue);}
+.kpi-val{font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:600;line-height:1;margin-bottom:3px;}
+.kpi.g .kpi-val{color:var(--green);}.kpi.r .kpi-val{color:var(--red);}.kpi.a .kpi-val{color:var(--amber);}.kpi.b .kpi-val{color:var(--blue);}
+.kpi-lbl{font-size:10px;color:var(--ink3);}
+
+.toolbar{display:flex;gap:6px;align-items:center;margin-bottom:10px;flex-wrap:wrap;}
+.fb{font-size:10px;padding:3px 9px;border-radius:3px;border:.5px solid var(--border);background:var(--s2);color:var(--ink2);cursor:pointer;font-family:inherit;}
+.fb.a-all{background:var(--ink);color:#fff;border-color:var(--ink);}
+.fb.a-h{background:var(--red-bg);color:var(--red);border-color:#f09595;font-weight:600;}
+.fb.a-m{background:var(--amber-bg);color:var(--amber);border-color:#fac775;font-weight:600;}
+.fb.a-l{background:var(--green-bg);color:var(--green);border-color:#97c459;font-weight:600;}
+.fb.a-gd{background:var(--blue-bg);color:var(--blue);border-color:#a3c0e8;font-weight:600;}
+.sep{width:1px;height:16px;background:var(--border);}
+.search-inp{padding:4px 10px;border:.5px solid var(--border);border-radius:3px;font-family:inherit;font-size:11px;outline:none;background:var(--surface);min-width:180px;}
+
+.tbl-wrap{background:var(--surface);border-radius:6px;border:.5px solid var(--border);overflow:hidden;}
+table{width:100%;border-collapse:collapse;table-layout:fixed;}
+th{font-size:9px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);padding:8px 10px;border-bottom:.5px solid var(--border);text-align:left;cursor:pointer;user-select:none;white-space:nowrap;background:var(--s3);overflow:hidden;text-overflow:ellipsis;}
+th:hover{color:var(--ink2);background:var(--s2);}
+th.sa::after{content:' ↑'} th.sd::after{content:' ↓'}
+td{padding:8px 10px;border-bottom:.5px solid var(--border);vertical-align:middle;overflow-wrap:break-word;}
+tr:last-child td{border-bottom:none;}
+.data-row{cursor:pointer;transition:background .1s;}
+.data-row:hover td{background:var(--s2);}
+
+.rag{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;padding:2px 8px;border-radius:3px;white-space:nowrap;}
+.rag-h{background:var(--red-bg);color:var(--red);}.rag-m{background:var(--amber-bg);color:var(--amber);}.rag-l{background:var(--green-bg);color:var(--green);}
+.dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.dot-h{background:var(--red);}.dot-m{background:var(--amber);}.dot-l{background:var(--green);}
+
+.bdg{display:inline-flex;font-size:9px;border-radius:2px;padding:1px 6px;font-weight:600;white-space:nowrap;}
+.b-g{background:var(--green-bg);color:var(--green);}.b-a{background:var(--amber-bg);color:var(--amber);}
+.b-r{background:var(--red-bg);color:var(--red);}.b-b{background:var(--blue-bg);color:var(--blue);}
+
+.vande-cell{display:block;font-size:11px;font-weight:600;line-height:1.45;overflow-wrap:break-word;}
+.vande-cell.v-h{color:var(--red);}    /* HIGH  → đỏ  */
+.vande-cell.v-m{color:var(--amber);}  /* MEDIUM→ vàng */
+.vande-cell.v-l{color:var(--green);}  /* LOW   → xanh */
+.vande-cell.ok{color:var(--ink3);font-weight:400;}
+.pic-pill{display:inline-block;font-size:9px;padding:1px 6px;background:var(--blue-bg);color:var(--blue);border-radius:2px;margin-top:4px;}
+.target-cell{font-size:11px;color:var(--ink2);line-height:1.45;overflow-wrap:break-word;}
+
+.legend{margin-top:16px;border:.5px solid var(--border);border-radius:6px;overflow:hidden;}
+.legend-hd{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);padding:8px 14px;border-bottom:.5px solid var(--border);background:var(--s2);}
+.legend-body{display:grid;grid-template-columns:repeat(3,1fr);}
+.legend-item{padding:10px 14px;border-right:.5px solid var(--border);}
+.legend-item:last-child{border-right:none;}
+.legend-lv{margin-bottom:4px;}
+.legend-desc{font-size:11px;color:var(--ink2);line-height:1.6;}
+
+.loading{text-align:center;padding:32px;color:var(--ink3);}
+.spinner{display:inline-block;width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .6s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<div class="hdr">
+  <div>
+    <h1>Portfolio Dashboard — Solar Rooftop</h1>
+    <p>CME Solar · <span id="total-count">—</span> dự án · <span id="report-date">—</span></p>
+  </div>
+  <div class="hdr-r">
+    PM CME Solar<br>
+    <span id="sync-time">Đang tải...</span>
+  </div>
+</div>
+
+<div class="kpi-row">
+  <div class="kpi b"><div class="kpi-val" id="k-total">—</div><div class="kpi-lbl">Tổng dự án</div></div>
+  <div class="kpi g"><div class="kpi-val" id="k-l">—</div><div class="kpi-lbl">🟢 LOW</div></div>
+  <div class="kpi a"><div class="kpi-val" id="k-m">—</div><div class="kpi-lbl">🟡 MEDIUM</div></div>
+  <div class="kpi r"><div class="kpi-val" id="k-h">—</div><div class="kpi-lbl">🔴 HIGH</div></div>
+  <div class="kpi"><div class="kpi-val" id="k-pre">—</div><div class="kpi-lbl">Chưa thi công</div></div>
+</div>
+
+<div class="toolbar">
+  <input class="search-inp" type="text" placeholder="🔍 Tìm dự án..." oninput="render()">
+  <div class="sep"></div>
+  RAG:
+  <button class="fb a-all" data-group="rag" onclick="sf('rag','all',this)">Tất cả</button>
+  <button class="fb" data-group="rag" onclick="sf('rag','H',this)">🔴 HIGH</button>
+  <button class="fb" data-group="rag" onclick="sf('rag','M',this)">🟡 MEDIUM</button>
+  <button class="fb" data-group="rag" onclick="sf('rag','L',this)">🟢 LOW</button>
+  <div class="sep"></div>
+  Giai đoạn:
+  <button class="fb a-gd" data-group="gd" onclick="sf('gd','all',this)">Tất cả</button>
+  <button class="fb" data-group="gd" onclick="sf('gd','Pre',this)">Pre</button>
+  <button class="fb" data-group="gd" onclick="sf('gd','CON',this)">CON</button>
+  <button class="fb" data-group="gd" onclick="sf('gd','O&M',this)">O&M</button>
+  <button class="fb" data-group="gd" onclick="sf('gd','EPC',this)">EPC</button>
+  <div class="sep"></div>
+  <button class="fb" onclick="loadAll()">🔄 Refresh</button>
+  <span id="rc" style="margin-left:auto;font-size:10px;color:var(--ink3)"></span>
+</div>
+
+<div id="dup-warning" style="display:none;background:var(--red-bg);color:var(--red);font-size:11px;font-weight:600;padding:8px 12px;border-radius:6px;margin-bottom:10px"></div>
+
+<div class="tbl-wrap">
+  <div class="loading" id="tbl-loading"><div class="spinner"></div><br>Đang tải...</div>
+  <table id="main-table" style="display:none">
+    <thead>
+      <tr>
+        <th data-key="id" onclick="sb('id')" style="width:4%">#</th>
+        <th data-key="name" onclick="sb('name')" style="width:14%">Dự án</th>
+        <th data-key="rag" onclick="sb('rag')" style="width:7%">RAG</th>
+        <th data-key="phase" onclick="sb('phase')" style="width:7%">Giai đoạn</th>
+        <th style="width:9%">Thanh toán</th>
+        <th style="width:36%">⚠️ Vấn đề / PIC</th>
+        <th style="width:23%">Mục tiêu</th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+  <div id="tbl-empty" style="display:none;text-align:center;padding:24px;color:var(--ink3)">Không có dự án phù hợp</div>
+</div>
+
+<div class="legend">
+  <div class="legend-hd">Định nghĩa mức độ rủi ro</div>
+  <div class="legend-body">
+    <div class="legend-item">
+      <div class="legend-lv"><span class="rag rag-l"><span class="dot dot-l"></span>LOW — On track</span></div>
+      <div class="legend-desc">Dự án trong pipeline, đã được BLĐ phê duyệt. Chưa ghi nhận rủi ro.</div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-lv"><span class="rag rag-m"><span class="dot dot-m"></span>MEDIUM — At risk</span></div>
+      <div class="legend-desc">Đã ghi nhận nguy cơ nhưng chưa có phương án xử lý cụ thể.</div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-lv"><span class="rag rag-h"><span class="dot dot-h"></span>HIGH — Critical</span></div>
+      <div class="legend-desc">Đã xác định vấn đề ảnh hưởng trực tiếp, có phương án, cần BLĐ quyết.</div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+const API = 'https://script.google.com/macros/s/AKfycbxOqrw7USflAwjS0k8mdQATs1PAtiLF1oX7c_IN12JrvRx0AUqmANl1LqVWuil_XNXS/exec';
+
+let projects = [];
+let paymentsData = [];
+let fRag = 'all', fGd = 'all';
+let sKey = null, sDir = 1;
+
+async function apiGet(sheet) {
+  const r = await fetch(`${API}?sheet=${encodeURIComponent(sheet)}`);
+  const d = await r.json();
+  if (Array.isArray(d)) return d;
+  return [];
+}
+
+async function loadAll() {
+  document.getElementById('tbl-loading').style.display = 'block';
+  document.getElementById('main-table').style.display = 'none';
+  document.getElementById('tbl-empty').style.display = 'none';
+  try {
+    const [proj, payments] = await Promise.all([
+      apiGet('projects'),
+      apiGet('payments')
+    ]);
+    paymentsData = payments;
+
+    // Dedupe projects by name
+    const seen = new Set();
+    const dupNames = [];
+    projects = proj
+      .filter(r => {
+        if (!r.name) return false;
+        if (seen.has(r.name)) { dupNames.push(r.name); return false; }
+        seen.add(r.name);
+        return true;
+      })
+      .map((r, i) => ({
+        id:       i + 1,
+        name:     r.name     || '',
+        location: r.location || '',
+        epc:      r.epc      || '',
+        tvgs:     r.tvgs     || '',
+        capacity:   r.capacity || '',
+        startDate:  r.startdate|| '',
+        cod:        r.cod      || '',
+        pm:         r.pm       || '',
+        rag:        (r.rag||'L').toString().toUpperCase().startsWith('H') ? 'H'
+                  : (r.rag||'L').toString().toUpperCase().startsWith('M') ? 'M' : 'L',
+        issue:      r.issue    || '',
+        phase:    r.phase    || 'CON',
+        target:   r.target   || '',
+        picDept:  r.picdept  || ''
+      }));
+
+    const dupWarn = document.getElementById('dup-warning');
+    if (dupNames.length) {
+      dupWarn.textContent = `⚠️ Phát hiện ${dupNames.length} dự án trùng tên (đã ẩn bản trùng): ${[...new Set(dupNames)].join(', ')}`;
+      dupWarn.style.display = 'block';
+    } else {
+      dupWarn.style.display = 'none';
+    }
+
+    document.getElementById('tbl-loading').style.display = 'none';
+    document.getElementById('main-table').style.display = 'table';
+    document.getElementById('total-count').textContent = projects.length;
+    document.getElementById('report-date').textContent = new Date().toLocaleDateString('vi-VN');
+    document.getElementById('sync-time').textContent = 'Cập nhật: ' + new Date().toLocaleTimeString('vi');
+    render();
+  } catch(e) {
+    console.error(e);
+    document.getElementById('tbl-loading').innerHTML = '❌ Lỗi kết nối. <button onclick="loadAll()">Thử lại</button>';
+  }
+}
+
+function calcPayments(name) {
+  const order = ['Tạm ứng','Đợt 1','Đợt 2','Đợt 3','QT'];
+  const rows = paymentsData.filter(r => r.project === name);
+  if (!rows.length) return null;
+  const approved = rows.filter(r => /approved|paid|đã duyệt/i.test(r.approvalstatus||''));
+  if (!approved.length) return [{ label: rows[0].paymentround||'—', cls: 'b-a', done: false }];
+  // Sort theo thứ tự cố định
+  approved.sort((a,b) => order.indexOf(a.paymentround) - order.indexOf(b.paymentround));
+  return approved.map(r => ({ label: r.paymentround, cls: 'b-g', done: true }));
+}
+
+function sf(type, val, btn) {
+  document.querySelectorAll(`.toolbar .fb[data-group="${type}"]`).forEach(b => b.className = 'fb');
+  if (type === 'rag') {
+    fRag = val;
+    btn.className = 'fb ' + (val==='all'?'a-all':val==='H'?'a-h':val==='M'?'a-m':'a-l');
+  } else {
+    fGd = val;
+    btn.className = 'fb a-gd';
+  }
+  render();
+}
+
+function sb(k) {
+  if (sKey === k) sDir *= -1; else { sKey = k; sDir = 1; }
+  document.querySelectorAll('th').forEach(t => t.className = '');
+  const th = document.querySelector(`th[data-key="${k}"]`);
+  if (th) th.className = sDir===1 ? 'sa' : 'sd';
+  render();
+}
+
+function ro(r){return r==='H'?0:r==='M'?1:2;}
+
+function render() {
+  const search = document.querySelector('.search-inp').value.toLowerCase();
+  let data = [...projects];
+  if (fRag !== 'all') data = data.filter(p => p.rag === fRag);
+  if (fGd !== 'all')  data = data.filter(p => p.phase === fGd);
+  if (search) data = data.filter(p =>
+    p.name.toLowerCase().includes(search) ||
+    p.issue.toLowerCase().includes(search) ||
+    p.picDept.toLowerCase().includes(search)
+  );
+
+  if (sKey) {
+    data.sort((a, b) => {
+      if (sKey==='id')    return (a.id - b.id) * sDir;
+      if (sKey==='name')  return a.name.localeCompare(b.name) * sDir;
+      if (sKey==='rag')   return (ro(a.rag) - ro(b.rag)) * sDir;
+      if (sKey==='phase') return a.phase.localeCompare(b.phase) * sDir;
+      if (sKey==='vande') return a.issue.localeCompare(b.issue) * sDir;
+      return 0;
+    });
+  }
+
+  document.getElementById('k-total').textContent = projects.length;
+  document.getElementById('k-l').textContent = projects.filter(p=>p.rag==='L').length;
+  document.getElementById('k-m').textContent = projects.filter(p=>p.rag==='M').length;
+  document.getElementById('k-h').textContent = projects.filter(p=>p.rag==='H').length;
+  document.getElementById('k-pre').textContent = projects.filter(p=>!['CON','O&M','Pre'].includes(p.phase)).length;
+  document.getElementById('rc').textContent = `Hiển thị ${data.length}/${projects.length}`;
+
+  if (!data.length) {
+    document.getElementById('tbody').innerHTML = '';
+    document.getElementById('tbl-empty').style.display = 'block';
+    return;
+  }
+  document.getElementById('tbl-empty').style.display = 'none';
+
+  document.getElementById('tbody').innerHTML = data.map(p => {
+    const rc = p.rag==='H' ? 'rag-h' : p.rag==='M' ? 'rag-m' : 'rag-l';
+    const dc = p.rag==='H' ? 'dot-h' : p.rag==='M' ? 'dot-m' : 'dot-l';
+    const rl = p.rag==='H' ? 'HIGH'  : p.rag==='M' ? 'MEDIUM': 'LOW';
+    const gdCls = p.phase==='CON' ? 'b-b' : p.phase==='O&M' ? 'b-g' : 'b-a';
+
+    // Thanh toán
+    const tt = calcPayments(p.name);
+    const ttHtml = tt
+      ? tt.map(t => `<span class="bdg ${t.cls}">${t.label}${t.done ? ' ✓' : ''}</span>`).join(' ')
+      : '<span style="color:var(--ink3)">—</span>';
+
+    // Vấn đề + PIC
+    const vc = p.rag==='H' ? 'v-h' : p.rag==='M' ? 'v-m' : 'v-l';
+    const vandeHtml = p.issue
+      ? `<div class="vande-cell ${vc}">🚨 ${p.issue}</div>${p.picDept?`<div class="pic-pill">${p.picDept}</div>`:''}`
+      : `<span class="vande-cell ${vc} ok">—</span>`;
+
+    return `<tr class="data-row" onclick="openDashboard('${encodeURIComponent(p.name)}')">
+      <td style="color:var(--ink3)">${p.id}</td>
+      <td><div style="font-weight:600;font-size:11px">${p.name}</div>
+          <div style="font-size:9px;color:var(--ink3)">${p.epc||''}${p.pm?' · '+p.pm:''}</div></td>
+      <td><span class="rag ${rc}"><span class="dot ${dc}"></span>${rl}</span></td>
+      <td><span class="bdg ${gdCls}">${p.phase}</span></td>
+      <td>${ttHtml}</td>
+      <td>${vandeHtml}</td>
+      <td class="target-cell">${p.target||'—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+function openDashboard(name) {
+  window.open(`app.html?project=${name}`, '_blank');
+}
+
+loadAll();
+</script>
+</body>
+</html>
