@@ -319,56 +319,9 @@ tr:hover td{background:var(--s2);}
 <div class="page" id="page-meeting">
   <div class="page-hdr">
     <h2>Họp tuần</h2>
-    <p>Tổng hợp dự án + action-item chuẩn bị cho họp nội bộ đầu tuần</p>
+    <p>Đi theo từng dự án — tồn đọng tự động còn nguyên tới khi xong, việc xong tự ẩn (xem lại qua "Xem lịch sử" của từng dự án)</p>
   </div>
-
-  <div class="sec">
-    <div class="sec-hdr"><span class="sec-num">1</span>Tổng hợp dự án</div>
-    <div class="tbl-wrap">
-      <table><thead><tr>
-        <th>Dự án</th><th>RAG</th><th>Giai đoạn</th><th>Vấn đề / PIC</th><th>Mục tiêu</th>
-      </tr></thead><tbody id="meeting-projects-tbody"></tbody></table>
-    </div>
-  </div>
-
-  <div class="sec">
-    <div class="sec-hdr" style="align-items:center">
-      <span class="sec-num">2</span>Action-item
-      <select id="meeting-week-filter" onchange="renderMeeting()" style="padding:4px 10px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:11px;background:var(--card);margin-left:8px">
-        <option value="">Tất cả tuần</option>
-      </select>
-      <label style="font-size:11px;color:var(--gray);display:flex;align-items:center;gap:4px;margin-left:8px">
-        <input type="checkbox" id="meeting-show-history" onchange="renderMeeting()"> Xem lịch sử (gồm đã xong)
-      </label>
-    </div>
-    <div class="card" id="meeting-additem-card" style="margin-bottom:12px;display:none">
-      <div class="card-lbl">Thêm action-item</div>
-      <div class="form-grid">
-        <div class="fg"><label>Dự án</label><select id="mi-project"><option value="">-- Chọn --</option></select></div>
-        <div class="fg"><label>Phòng ban</label>
-          <select id="mi-department">
-            <option value="phaply">Pháp lý</option>
-            <option value="vattu">Vật tư</option>
-            <option value="hse">HSE</option>
-            <option value="kythuat">Kỹ thuật</option>
-            <option value="taichinh">Tài chính</option>
-            <option value="epc">EPC</option>
-            <option value="nhamay">Nhà máy</option>
-            <option value="pm">PM</option>
-          </select>
-        </div>
-        <div class="fg"><label>Tuần</label><input type="text" id="mi-week" placeholder="Tuần 29"></div>
-        <div class="fg"><label>Deadline</label><input type="text" id="mi-deadline" placeholder="dd/mm/yyyy"></div>
-        <div class="fg span2"><label>Nội dung</label><input type="text" id="mi-description" placeholder="Mô tả action-item"></div>
-      </div>
-      <div class="btn-row"><button class="btn btn-green" onclick="createMeetingItem()">+ Thêm action-item</button></div>
-    </div>
-    <div class="tbl-wrap">
-      <table><thead><tr>
-        <th>Dự án</th><th>Tuần</th><th>Nội dung</th><th>Phòng ban</th><th>Deadline</th><th>Trạng thái</th><th>Ghi chú</th>
-      </tr></thead><tbody id="meeting-items-tbody"></tbody></table>
-    </div>
-  </div>
+  <div id="meeting-project-blocks"></div>
 </div>
 
 <script>
@@ -1445,96 +1398,173 @@ function renderIssues() {
       <tbody>${tblHtml}</tbody></table>
     </div>`;
 }
-// ── MEETING (Họp tuần) ──
-function renderMeetingProjects() {
-  const rows = allData.proj || [];
-  document.getElementById('meeting-projects-tbody').innerHTML = rows.length ? rows.map(r => {
-    const rag = (r.rag||'L').toString().toUpperCase().charAt(0);
-    const ragLbl = rag==='H'?'HIGH':rag==='M'?'MEDIUM':'LOW';
-    return `<tr>
-      <td><strong>${r.name||'—'}</strong></td>
-      <td><span class="rag-pill rag-${rag}">${ragLbl}</span></td>
-      <td>${r.phase||'—'}</td>
-      <td style="font-size:11px">${r.issue?`<span style="color:var(--accent)">🚨 ${r.issue}</span>`:'<span style="color:var(--gray)">—</span>'}${r.picdept?`<div style="display:inline-block;font-size:9px;padding:1px 6px;background:var(--blue-bg);color:var(--blue);border-radius:2px;margin-top:4px">${r.picdept}</div>`:''}</td>
-      <td style="font-size:11px;color:var(--gray)">${r.target||'—'}</td>
-    </tr>`;
-  }).join('') : '<tr><td colspan="5" style="text-align:center;color:var(--gray);padding:20px">Chưa có dự án</td></tr>';
-}
-
-function populateMeetingWeekFilter() {
-  const weeks = [...new Set(actionItems.map(r => r.week).filter(Boolean))].sort();
-  const sel = document.getElementById('meeting-week-filter');
-  const current = sel.value;
-  sel.innerHTML = '<option value="">Tất cả tuần</option>' + weeks.map(w => `<option value="${w}" ${w===current?'selected':''}>${w}</option>`).join('');
-}
-
+// ── MEETING (Họp tuần) — nhóm theo từng dự án ──
 function isOverdue(item) {
   if (!item.deadline || item.status === 'done') return false;
   const d = parseDateDMY(item.deadline);
   return d && d.getTime() > 0 && d < new Date();
 }
 
-function renderMeetingItems() {
-  const weekFilter = document.getElementById('meeting-week-filter').value;
-  const showHistory = document.getElementById('meeting-show-history').checked;
-  let items = [...actionItems];
-  if (weekFilter) items = items.filter(r => r.week === weekFilter);
-  if (!showHistory) items = items.filter(r => r.status !== 'done');
-
-  const STATUS_LABEL = { open:'Chưa xử lý', in_progress:'Đang xử lý', done:'Đã xong' };
-  const canEdit = item => currentUser.role === 'pm' || item.department === currentUser.role;
-
-  document.getElementById('meeting-items-tbody').innerHTML = items.length ? items.map(r => {
-    const overdue = isOverdue(r);
-    const editable = canEdit(r);
-    const statusOptions = ['open','in_progress','done'].map(s => `<option value="${s}" ${r.status===s?'selected':''}>${STATUS_LABEL[s]}</option>`).join('');
-    return `<tr style="${overdue?'background:var(--red-bg)':''}">
-      <td>${r.project||'—'}</td>
-      <td>${r.week||'—'}</td>
-      <td style="font-size:11px">${r.description||'—'}${overdue?' <span class="warning-chip">Quá hạn</span>':''}</td>
-      <td><span class="badge b-na">${DEPT_LABEL[r.department]||r.department||'—'}</span></td>
-      <td style="font-size:11px">${r.deadline||'—'}</td>
-      <td>${editable
-          ? `<select onchange="updateMeetingItemStatus('${r.id}', this.value)" style="font-size:11px;padding:3px 6px">${statusOptions}</select>`
-          : `<span class="badge ${r.status==='done'?'b-done':r.status==='in_progress'?'b-wait':'b-na'}">${STATUS_LABEL[r.status]||r.status||'—'}</span>`}
-      </td>
-      <td style="font-size:11px;color:var(--gray)">
-        ${editable ? `<input type="text" value="${r.note||''}" onchange="updateMeetingItemNote('${r.id}', this.value)" style="width:100%;font-size:11px;padding:3px 6px;border:1px solid var(--border);border-radius:4px">` : (r.note||'—')}
-      </td>
-    </tr>`;
-  }).join('') : '<tr><td colspan="7" style="text-align:center;color:var(--gray);padding:20px">Không có action-item</td></tr>';
+function groupActionItemsByProject() {
+  const map = {};
+  actionItems.forEach(item => {
+    if (!map[item.project]) map[item.project] = [];
+    map[item.project].push(item);
+  });
+  return map;
 }
 
-function renderMeeting() {
-  renderMeetingProjects();
-  populateMeetingWeekFilter();
-  renderMeetingItems();
-  document.getElementById('meeting-additem-card').style.display = (currentUser && currentUser.role === 'pm') ? 'block' : 'none';
+const STATUS_LABEL = { open:'Chưa xử lý', in_progress:'Đang xử lý', done:'Đã xong' };
+
+function meetingItemRowHtml(r) {
+  const overdue = isOverdue(r);
+  const editable = currentUser.role === 'pm' || r.department === currentUser.role;
+  const statusOptions = ['open','in_progress','done'].map(s => `<option value="${s}" ${r.status===s?'selected':''}>${STATUS_LABEL[s]}</option>`).join('');
+  return `
+    <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--s2);flex-wrap:wrap;${overdue?'background:var(--red-bg)':''}">
+      <span style="flex:1;min-width:140px;font-size:12.5px">${r.description||'—'}${overdue?' <span class="warning-chip">Quá hạn</span>':''}</span>
+      <span class="badge b-na">${DEPT_LABEL[r.department]||r.department||'—'}</span>
+      <span style="font-size:11px;color:var(--gray);min-width:60px">${r.deadline||'—'}</span>
+      ${editable
+        ? `<select onchange="updateMeetingItemStatus('${r.id}', this.value)" style="font-size:11px;padding:3px 6px">${statusOptions}</select>`
+        : `<span class="badge ${r.status==='done'?'b-done':r.status==='in_progress'?'b-wait':'b-na'}">${STATUS_LABEL[r.status]||r.status||'—'}</span>`}
+      ${editable ? `<input type="text" value="${r.note||''}" placeholder="Ghi chú" onchange="updateMeetingItemNote('${r.id}', this.value)" style="width:120px;font-size:11px;padding:3px 6px;border:1px solid var(--border);border-radius:4px">` : (r.note?`<span style="font-size:11px;color:var(--gray)">${r.note}</span>`:'')}
+    </div>`;
+}
+
+function meetingBlockId(name) {
+  return 'mi-hist-' + name.replace(/[^a-zA-Z0-9]/g, '');
+}
+
+function toggleMeetingHistory(id) {
+  const el = document.getElementById(id);
+  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function renderMeetingBlocks() {
+  const grouped = groupActionItemsByProject();
+  const isPm = currentUser.role === 'pm';
+  const projects = allData.proj || [];
+
+  const blocksHtml = projects.map(p => {
+    // Mọi vai trò đều thấy hết dự án (để sửa được rag/issue/picdept/target bất kỳ lúc nào),
+    // nhưng action-item vẫn chỉ lọc đúng phòng ban của họ (trừ PM thấy hết).
+    const items = (grouped[p.name] || []).filter(i => isPm || i.department === currentUser.role);
+    const active = items.filter(i => i.status !== 'done');
+    const done = items.filter(i => i.status === 'done');
+    const rag = (p.rag||'L').toString().toUpperCase().charAt(0);
+    const ragLbl = rag==='H'?'HIGH':rag==='M'?'MEDIUM':'LOW';
+    const histId = meetingBlockId(p.name);
+
+    const rowsHtml = active.length ? active.map(meetingItemRowHtml).join('')
+      : '<div style="padding:10px 0;color:var(--gray);font-size:12px">Không có việc tồn đọng</div>';
+
+    const editId = meetingBlockId(p.name) + '-edit';
+    const editFormHtml = `
+      <div id="${editId}" style="display:none;margin:8px 0;padding:12px;background:var(--s2);border-radius:6px">
+        <div class="form-grid">
+          <div class="fg"><label>RAG</label>
+            <select class="pe-rag">
+              <option value="L" ${rag==='L'?'selected':''}>L — Low</option>
+              <option value="M" ${rag==='M'?'selected':''}>M — Medium</option>
+              <option value="H" ${rag==='H'?'selected':''}>H — High</option>
+            </select>
+          </div>
+          <div class="fg"><label>Giai đoạn</label>
+            <select class="pe-phase">
+              ${['Pre','CON','O&M','EPC'].map(ph => `<option value="${ph}" ${p.phase===ph?'selected':''}>${ph}</option>`).join('')}
+            </select>
+          </div>
+          <div class="fg span2"><label>Vấn đề</label><input type="text" class="pe-issue" value="${(p.issue||'').replace(/"/g,'&quot;')}"></div>
+          <div class="fg"><label>PIC Dept</label><input type="text" class="pe-picdept" value="${(p.picdept||'').replace(/"/g,'&quot;')}"></div>
+          <div class="fg"><label>Mục tiêu</label><input type="text" class="pe-target" value="${(p.target||'').replace(/"/g,'&quot;')}"></div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-green" onclick="saveProjectEdit('${p.name.replace(/'/g,"\\'")}', '${editId}', this)">Lưu</button>
+          <button class="btn btn-ghost" onclick="toggleProjectEdit('${editId}')">Huỷ</button>
+        </div>
+      </div>`;
+
+    const quickAddHtml = isPm ? `
+      <div class="mi-quickadd" style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;align-items:center">
+        <input type="text" placeholder="Việc mới cho ${p.name}..." class="mi-qa-desc" style="flex:1;min-width:160px;padding:6px 10px;border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:12px">
+        <select class="mi-qa-dept" style="padding:6px 8px;border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:12px">
+          <option value="phaply">Pháp lý</option><option value="vattu">Vật tư</option><option value="hse">HSE</option>
+          <option value="kythuat">Kỹ thuật</option><option value="taichinh">Tài chính</option><option value="epc">EPC</option>
+          <option value="nhamay">Nhà máy</option><option value="pm">PM</option>
+        </select>
+        <input type="text" placeholder="dd/mm/yyyy" class="mi-qa-deadline" style="width:90px;padding:6px 8px;border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:12px">
+        <button class="btn btn-green" style="padding:6px 12px;font-size:11px" onclick="quickAddMeetingItem('${p.name.replace(/'/g,"\\'")}', this)">+ Thêm</button>
+      </div>` : '';
+
+    return `
+      <div class="card" style="margin-bottom:14px">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px">
+          <span class="rag-pill rag-${rag}">${ragLbl}</span>
+          <strong style="font-size:13px">${p.name}</strong>
+          <span class="badge b-na">${p.phase||'—'}</span>
+          ${p.issue?`<span style="font-size:12px;color:var(--accent)">🚨 ${p.issue}</span>`:''}
+          ${p.picdept?`<span style="font-size:10px;padding:2px 8px;background:var(--blue-bg);color:var(--blue);border-radius:3px">${p.picdept}</span>`:''}
+          <span style="margin-left:auto;font-size:11px;color:var(--gray);cursor:pointer;text-decoration:underline" onclick="toggleProjectEdit('${editId}')">✏️ Edit</span>
+        </div>
+        ${editFormHtml}
+        <div class="mi-rows">${rowsHtml}</div>
+        ${quickAddHtml}
+        ${done.length ? `
+          <div style="margin-top:8px">
+            <span style="font-size:11px;color:var(--gray);cursor:pointer;text-decoration:underline" onclick="toggleMeetingHistory('${histId}')">📜 Xem lịch sử (${done.length} việc đã xong)</span>
+            <div id="${histId}" style="display:none;margin-top:6px">${done.map(meetingItemRowHtml).join('')}</div>
+          </div>` : ''}
+      </div>`;
+  }).join('');
+
+  document.getElementById('meeting-project-blocks').innerHTML = blocksHtml || '<div style="padding:24px;text-align:center;color:var(--gray)">Chưa có dự án hoặc action-item nào phù hợp</div>';
 }
 
 async function loadMeeting() {
   actionItems = await apiGetActionItems();
-  const opts = (allData.proj||[]).map(p => `<option value="${p.name}">${p.name}</option>`).join('');
-  const projSel = document.getElementById('mi-project');
-  if (projSel) projSel.innerHTML = '<option value="">-- Chọn --</option>' + opts;
-  renderMeeting();
+  renderMeetingBlocks();
 }
 
-async function createMeetingItem() {
-  const project = document.getElementById('mi-project').value;
-  const department = document.getElementById('mi-department').value;
-  const week = document.getElementById('mi-week').value.trim();
-  const deadline = document.getElementById('mi-deadline').value.trim();
-  const description = document.getElementById('mi-description').value.trim();
-  if (!project || !description) { toast('Chọn dự án và nhập nội dung', 'err'); return; }
+function toggleProjectEdit(editId) {
+  const el = document.getElementById(editId);
+  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+async function saveProjectEdit(project, editId, btn) {
+  const wrap = document.getElementById(editId);
+  const rag = wrap.querySelector('.pe-rag').value;
+  const phase = wrap.querySelector('.pe-phase').value;
+  const issue = wrap.querySelector('.pe-issue').value.trim();
+  const picdept = wrap.querySelector('.pe-picdept').value.trim();
+  const target = wrap.querySelector('.pe-target').value.trim();
+  btn.disabled = true; btn.textContent = 'Đang lưu...';
   try {
-    const res = await apiPost({ action: 'createActionItem', project, week, department, deadline, description });
-    if (res.status !== 'ok') { toast(res.message || 'Lỗi tạo action-item', 'err'); return; }
-    toast('✓ Đã thêm action-item');
-    document.getElementById('mi-description').value = '';
-    document.getElementById('mi-deadline').value = '';
+    const res = await apiPost({ action: 'updateProject', project, rag, phase, issue, picdept, target });
+    if (res.status !== 'ok') { toast(res.message || 'Lỗi lưu dự án', 'err'); btn.disabled = false; btn.textContent = 'Lưu'; return; }
+    toast('✓ Đã cập nhật ' + project);
+    const proj = allData.proj.find(p => p.name === project);
+    if (proj) { proj.rag = rag; proj.phase = phase; proj.issue = issue; proj.picdept = picdept; proj.target = target; }
+    renderMeetingBlocks();
+  } catch (e) {
+    toast('Lỗi lưu dự án', 'err');
+    btn.disabled = false; btn.textContent = 'Lưu';
+  }
+}
+
+async function quickAddMeetingItem(project, btn) {
+  const wrap = btn.closest('.mi-quickadd');
+  const description = wrap.querySelector('.mi-qa-desc').value.trim();
+  const department = wrap.querySelector('.mi-qa-dept').value;
+  const deadline = wrap.querySelector('.mi-qa-deadline').value.trim();
+  if (!description) { toast('Nhập nội dung việc', 'err'); return; }
+  btn.disabled = true;
+  try {
+    const res = await apiPost({ action: 'createActionItem', project, department, deadline, description, week: '' });
+    if (res.status !== 'ok') { toast(res.message || 'Lỗi tạo action-item', 'err'); btn.disabled = false; return; }
+    toast('✓ Đã thêm việc mới cho ' + project);
     await loadMeeting();
-  } catch (e) { toast('Lỗi tạo action-item', 'err'); }
+  } catch (e) { toast('Lỗi tạo action-item', 'err'); btn.disabled = false; }
 }
 
 async function updateMeetingItemStatus(id, status) {
@@ -1543,7 +1573,7 @@ async function updateMeetingItemStatus(id, status) {
     if (res.status !== 'ok') { toast(res.message || 'Lỗi cập nhật', 'err'); await loadMeeting(); return; }
     const item = actionItems.find(r => r.id === id);
     if (item) item.status = status;
-    renderMeetingItems();
+    renderMeetingBlocks();
   } catch (e) { toast('Lỗi cập nhật trạng thái', 'err'); }
 }
 
