@@ -161,8 +161,10 @@ const API = 'https://script.google.com/macros/s/AKfycbxOqrw7USflAwjS0k8mdQATs1PA
 
 let projects = [];
 let paymentsData = [];
+let actionItems = [];
 let fRag = 'all', fGd = 'all';
 let sKey = null, sDir = 1;
+const DEPT_LABEL = { pm:'PM', phaply:'Pháp lý', vattu:'Vật tư', hse:'HSE', kythuat:'Kỹ thuật', taichinh:'Tài chính', epc:'EPC', nhamay:'Nhà máy' };
 
 async function apiGet(sheet) {
   const r = await fetch(`${API}?sheet=${encodeURIComponent(sheet)}`);
@@ -171,16 +173,32 @@ async function apiGet(sheet) {
   return [];
 }
 
+async function apiGetActionItemsPublic() {
+  const r = await fetch(`${API}?action=actionitems_public`);
+  const d = await r.json();
+  return Array.isArray(d) ? d : [];
+}
+
+function parseDMY(s) {
+  if (!s) return null;
+  const m = s.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
+  if (!m) return null;
+  const y = m[3].length === 2 ? '20'+m[3] : m[3];
+  return new Date(`${y}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`);
+}
+
 async function loadAll() {
   document.getElementById('tbl-loading').style.display = 'block';
   document.getElementById('main-table').style.display = 'none';
   document.getElementById('tbl-empty').style.display = 'none';
   try {
-    const [proj, payments] = await Promise.all([
+    const [proj, payments, aItems] = await Promise.all([
       apiGet('projects'),
-      apiGet('payments')
+      apiGet('payments'),
+      apiGetActionItemsPublic()
     ]);
     paymentsData = payments;
+    actionItems = aItems;
 
     // Dedupe projects by name
     const seen = new Set();
@@ -317,8 +335,9 @@ function render() {
       ? `<div class="vande-cell ${vc}">🚨 ${p.issue}</div>${p.picDept?`<div class="pic-pill">${p.picDept}</div>`:''}`
       : `<span class="vande-cell ${vc} ok">—</span>`;
 
+    const rowId = 'ai-row-' + p.id;
     return `<tr class="data-row" onclick="openDashboard('${encodeURIComponent(p.name)}')">
-      <td style="color:var(--ink3)">${p.id}</td>
+      <td style="color:var(--ink3)"><span onclick="event.stopPropagation();toggleActionItems(this,'${rowId}')" style="cursor:pointer;display:inline-block;width:12px">▸</span>${p.id}</td>
       <td><div style="font-weight:600;font-size:11px">${p.name}</div>
           <div style="font-size:9px;color:var(--ink3)">${p.epc||''}${p.pm?' · '+p.pm:''}</div></td>
       <td><span class="rag ${rc}"><span class="dot ${dc}"></span>${rl}</span></td>
@@ -326,8 +345,44 @@ function render() {
       <td>${ttHtml}</td>
       <td>${vandeHtml}</td>
       <td class="target-cell">${p.target||'—'}</td>
+    </tr>
+    <tr id="${rowId}-detail" style="display:none">
+      <td colspan="7" style="background:var(--s2);padding:10px 16px 12px 34px">${actionItemDetailHtml(p.name)}</td>
     </tr>`;
   }).join('');
+}
+
+function actionItemRowHtml(a) {
+  const STATUS_LABEL = { open:'Chưa xử lý', in_progress:'Đang xử lý', done:'Đã xong' };
+  const overdue = a.deadline && a.status !== 'done' && parseDMY(a.deadline) && parseDMY(a.deadline) < new Date();
+  return `<div style="display:flex;gap:8px;padding:5px 0;border-bottom:.5px solid var(--border);font-size:11px;flex-wrap:wrap;${overdue?'color:var(--red)':''}">
+    <span style="flex:1;min-width:140px">${a.description||'—'}${overdue?' ⚠️ Quá hạn':''}</span>
+    <span class="bdg b-b">${DEPT_LABEL[a.department]||a.department||'—'}</span>
+    <span style="color:var(--ink3);min-width:60px">${a.deadline||'—'}</span>
+    <span>${STATUS_LABEL[a.status]||a.status||'—'}</span>
+  </div>`;
+}
+
+function actionItemDetailHtml(projectName) {
+  const items = actionItems.filter(a => a.project === projectName);
+  if (!items.length) return '<div style="font-size:11px;color:var(--ink3)">Không có action-item nào</div>';
+  const active = items.filter(a => a.status !== 'done');
+  const done = items.filter(a => a.status === 'done');
+  const activeHtml = active.length ? active.map(actionItemRowHtml).join('') : '<div style="font-size:11px;color:var(--ink3)">Không có việc tồn đọng</div>';
+  const doneId = 'ai-done-' + projectName.replace(/[^a-zA-Z0-9]/g, '');
+  return activeHtml + (done.length ? `
+    <div style="margin-top:6px">
+      <span style="font-size:10px;color:var(--ink3);cursor:pointer;text-decoration:underline" onclick="event.stopPropagation();var d=document.getElementById('${doneId}');d.style.display=d.style.display==='none'?'block':'none'">Xem lịch sử (${done.length} đã xong)</span>
+      <div id="${doneId}" style="display:none;margin-top:4px">${done.map(actionItemRowHtml).join('')}</div>
+    </div>` : '');
+}
+
+function toggleActionItems(el, rowId) {
+  const detail = document.getElementById(rowId + '-detail');
+  if (!detail) return;
+  const show = detail.style.display === 'none';
+  detail.style.display = show ? 'table-row' : 'none';
+  el.textContent = show ? '▾' : '▸';
 }
 
 function openDashboard(name) {
