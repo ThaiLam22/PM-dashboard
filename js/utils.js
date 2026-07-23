@@ -1,4 +1,34 @@
 // ── UTILS — dùng chung cho nhiều tab ──
+// esc() = escape HTML — bắt buộc dùng cho MỌI text tự do lấy từ sheet trước khi chèn vào
+// innerHTML (issue, target, note, description...), vì backend không còn token nên ai cũng
+// ghi được vào sheet — không escape sẽ dính XSS (xem CLAUDE.md).
+function esc(s) {
+  if (s === null || s === undefined) return '';
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+// Dùng riêng cho text chèn vào onclick="...('TEXT')" — TEXT nằm trong chuỗi JS (nháy đơn)
+// lồng trong thuộc tính HTML (nháy kép). Thứ tự bắt buộc: thoát JS trước (\, '), rồi thoát
+// HTML sau (&, ") — không dùng esc() ở đây vì esc() sẽ thoát dấu ' sai ngữ cảnh.
+// Render nội dung Vấn đề đã gộp bullet — mỗi dòng có thể kết thúc bằng "(PIC: X)" (do backend
+// gắn khi gộp), đổi thành 1 badge nhỏ màu xanh thay vì để ngoặc đơn thô cho gọn mắt.
+function formatIssueHtml(text) {
+  if (!text) return '';
+  return esc(text).split('\n').map(line =>
+    line.replace(/\(PIC: ([^)]+)\)\s*$/, '<span style="font-size:10px;padding:1px 6px;background:var(--blue-bg);color:var(--blue);border-radius:2px;margin-left:4px">PIC: $1</span>')
+  ).join('<br>');
+}
+function escJsAttr(s) {
+  return String(s)
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'")
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;');
+}
 function toast(msg, type='ok') {
   const t = document.getElementById('toast');
   t.textContent = msg; t.className = 'toast ' + type;

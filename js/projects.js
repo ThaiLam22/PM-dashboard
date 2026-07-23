@@ -10,19 +10,19 @@ function renderProjects() {
     const rag = (r.rag||'L').toString().toUpperCase().charAt(0);
     const ragLbl = rag==='H'?'HIGH':rag==='M'?'MEDIUM':'LOW';
     return `<tr>
-      <td><strong>${r.name||'—'}</strong></td>
-      <td>${r.location||'—'}</td>
-      <td>${r.epc||'—'}</td>
-      <td>${r.tvgs||'—'}</td>
-      <td>${r.capacity||'—'}</td>
-      <td>${r.startdate||'—'}</td>
-      <td>${r.cod||'—'}</td>
-      <td>${r.pm||'—'}</td>
+      <td><strong>${esc(r.name||'—')}</strong></td>
+      <td>${esc(r.location||'—')}</td>
+      <td>${esc(r.epc||'—')}</td>
+      <td>${esc(r.tvgs||'—')}</td>
+      <td>${esc(r.capacity||'—')}</td>
+      <td>${esc(r.startdate||'—')}</td>
+      <td>${esc(r.cod||'—')}</td>
+      <td>${esc(r.pm||'—')}</td>
       <td><span class="rag-pill rag-${rag}">${ragLbl}</span></td>
-      <td>${r.phase||'—'}</td>
-      <td style="font-size:11px;color:var(--accent)">${r.issue||'—'}</td>
-      <td style="font-size:11px">${r.picdept||'—'}</td>
-      <td>${r.target||'—'}</td>
+      <td>${esc(r.phase||'—')}</td>
+      <td style="font-size:11px;color:var(--accent)">${r.issue?formatIssueHtml(r.issue):'—'}</td>
+      <td style="font-size:11px">${esc(r.picdept||'—')}</td>
+      <td>${esc(r.target||'—')}</td>
     </tr>`;
   }).join('');
 

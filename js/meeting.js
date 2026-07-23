@@ -30,13 +30,13 @@ function meetingItemRowHtml(r) {
   const statusOptions = ['open','in_progress','done'].map(s => `<option value="${s}" ${r.status===s?'selected':''}>${STATUS_LABEL[s]}</option>`).join('');
   return `
     <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--s2);flex-wrap:wrap;${overdue?'background:var(--red-bg)':''}">
-      <span style="flex:1;min-width:140px;font-size:12.5px">${r.description||'—'}${overdue?' <span class="warning-chip">Quá hạn</span>':''}</span>
-      <span class="badge b-na">${DEPT_LABEL[r.department]||r.department||'—'}</span>
-      <span style="font-size:11px;color:var(--gray);min-width:60px">${r.deadline||'—'}</span>
+      <span style="flex:1;min-width:140px;font-size:12.5px">${esc(r.description||'—')}${overdue?' <span class="warning-chip">Quá hạn</span>':''}</span>
+      <span class="badge b-na">${esc(deptLabel(r.department))}</span>
+      <span style="font-size:11px;color:var(--gray);min-width:60px">${esc(r.deadline||'—')}</span>
       ${editable
-        ? `<select onchange="updateMeetingItemStatus('${r.id}', this.value)" style="font-size:11px;padding:3px 6px">${statusOptions}</select>`
-        : `<span class="badge ${r.status==='done'?'b-done':r.status==='in_progress'?'b-wait':'b-na'}">${STATUS_LABEL[r.status]||r.status||'—'}</span>`}
-      ${editable ? `<input type="text" value="${r.note||''}" placeholder="Ghi chú" onchange="updateMeetingItemNote('${r.id}', this.value)" style="width:120px;font-size:11px;padding:3px 6px;border:1px solid var(--border);border-radius:4px">` : (r.note?`<span style="font-size:11px;color:var(--gray)">${r.note}</span>`:'')}
+        ? `<select onchange="updateMeetingItemStatus('${escJsAttr(r.id)}', this.value)" style="font-size:11px;padding:3px 6px">${statusOptions}</select>`
+        : `<span class="badge ${r.status==='done'?'b-done':r.status==='in_progress'?'b-wait':'b-na'}">${esc(STATUS_LABEL[r.status]||r.status||'—')}</span>`}
+      ${editable ? `<input type="text" value="${esc(r.note||'')}" placeholder="Ghi chú" onchange="updateMeetingItemNote('${escJsAttr(r.id)}', this.value)" style="width:120px;font-size:11px;padding:3px 6px;border:1px solid var(--border);border-radius:4px">` : (r.note?`<span style="font-size:11px;color:var(--gray)">${esc(r.note)}</span>`:'')}
     </div>`;
 }
 
@@ -55,6 +55,7 @@ function renderMeetingBlocks() {
   const allProjects = allData.proj || [];
   const projects = meetingShowAll ? allProjects : allProjects.filter(p => p.name === currentProject);
   const locked = isWeekLocked();
+  const lastReportedDept = localStorage.getItem('cme_last_reported_dept') || 'pm';
 
   const blocksHtml = projects.map(p => {
     // Mọi vai trò đều thấy hết dự án (để sửa được rag/issue/picdept/target bất kỳ lúc nào),
@@ -86,48 +87,39 @@ function renderMeetingBlocks() {
             </select>
           </div>
           <div class="fg"><label>Bộ phận nhập</label>
-            <select class="pe-reporteddept">
-              <option value="pm">PM</option>
-              <option value="phaply">Pháp lý</option>
-              <option value="vattu">Vật tư</option>
-              <option value="hse">HSE</option>
-              <option value="kythuat">Kỹ thuật</option>
-              <option value="taichinh">Tài chính</option>
-              <option value="epc">EPC</option>
-              <option value="nhamay">Nhà máy</option>
+            <select class="pe-reporteddept" onchange="localStorage.setItem('cme_last_reported_dept', this.value)">
+              ${Object.keys(DEPT_LABEL).map(k => `<option value="${k}" ${k===lastReportedDept?'selected':''}>${DEPT_LABEL[k]}</option>`).join('')}
             </select>
           </div>
-          <div class="fg span2"><label>Vấn đề</label><input type="text" class="pe-issue" value="${String(p.issue||'').replace(/"/g,'&quot;')}"></div>
-          <div class="fg"><label>PIC Dept</label><input type="text" class="pe-picdept" value="${String(p.picdept||'').replace(/"/g,'&quot;')}"></div>
-          <div class="fg"><label>Mục tiêu</label><input type="text" class="pe-target" value="${String(p.target||'').replace(/"/g,'&quot;')}"></div>
+          <div class="fg span2"><label>Vấn đề mới (để trống nếu không thêm — nội dung cũ vẫn giữ nguyên trên dashboard)</label><input type="text" class="pe-issue" placeholder="Nhập vấn đề mới cần thêm..." value=""></div>
+          <div class="fg"><label>PIC Dept</label><input type="text" class="pe-picdept" value="${esc(p.picdept||'')}"></div>
+          <div class="fg"><label>Mục tiêu</label><input type="text" class="pe-target" value="${esc(p.target||'')}"></div>
         </div>
         <div class="btn-row">
-          <button class="btn btn-green" onclick="saveProjectEdit('${p.name.replace(/'/g,"\\'")}', '${editId}', this)">Lưu</button>
+          <button class="btn btn-green" onclick="saveProjectEdit('${escJsAttr(p.name)}', '${editId}', this)">Lưu</button>
           <button class="btn btn-ghost" onclick="toggleProjectEdit('${editId}')">Huỷ</button>
         </div>
       </div>`;
 
     const quickAddHtml = isPm ? `
       <div class="mi-quickadd" style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;align-items:center">
-        <input type="text" placeholder="Việc mới cho ${p.name}..." class="mi-qa-desc" style="flex:1;min-width:160px;padding:6px 10px;border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:12px">
+        <input type="text" placeholder="Việc mới cho ${esc(p.name)}..." class="mi-qa-desc" style="flex:1;min-width:160px;padding:6px 10px;border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:12px">
         <select class="mi-qa-dept" style="padding:6px 8px;border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:12px">
-          <option value="phaply">Pháp lý</option><option value="vattu">Vật tư</option><option value="hse">HSE</option>
-          <option value="kythuat">Kỹ thuật</option><option value="taichinh">Tài chính</option><option value="epc">EPC</option>
-          <option value="nhamay">Nhà máy</option><option value="pm">PM</option>
+          ${Object.keys(DEPT_LABEL).filter(k=>k!=='pm').map(k => `<option value="${k}">${DEPT_LABEL[k]}</option>`).join('')}
+          <option value="pm">PM</option>
         </select>
         <input type="text" placeholder="dd/mm/yyyy" class="mi-qa-deadline" style="width:90px;padding:6px 8px;border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:12px">
-        <button class="btn btn-green" style="padding:6px 12px;font-size:11px" onclick="quickAddMeetingItem('${p.name.replace(/'/g,"\\'")}', this)">+ Thêm</button>
+        <button class="btn btn-green" style="padding:6px 12px;font-size:11px" onclick="quickAddMeetingItem('${escJsAttr(p.name)}', this)">+ Thêm</button>
       </div>` : '';
 
     return `
       <div class="card" style="margin-bottom:14px">
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px">
           <span class="rag-pill rag-${rag}">${ragLbl}</span>
-          <strong style="font-size:13px">${p.name}</strong>
-          <span class="badge b-na">${p.phase||'—'}</span>
-          ${p.issue?`<div style="font-size:12px;color:var(--accent)">🚨 ${String(p.issue).replace(/\n/g,'<br>')}</div>`:''}
-          ${p.picdept?`<span style="font-size:10px;padding:2px 8px;background:var(--blue-bg);color:var(--blue);border-radius:3px">${p.picdept}</span>`:''}
-          <span style="margin-left:auto;font-size:11px;color:var(--gray);cursor:pointer;text-decoration:underline" onclick="toggleProjectHistory('${p.name.replace(/'/g,"\\'")}', '${editId}-hist')">📜 Lịch sử dự án</span>
+          <strong style="font-size:13px">${esc(p.name)}</strong>
+          <span class="badge b-na">${esc(p.phase||'—')}</span>
+          ${p.issue?`<div style="font-size:12px;color:var(--accent)">🚨 ${formatIssueHtml(p.issue)}</div>`:''}
+          <span style="margin-left:auto;font-size:11px;color:var(--gray);cursor:pointer;text-decoration:underline" onclick="toggleProjectHistory('${escJsAttr(p.name)}', '${editId}-hist')">📜 Lịch sử dự án</span>
           ${locked
             ? `<span style="font-size:11px;color:var(--gray)">🔒 Đã khóa</span>`
             : `<span style="font-size:11px;color:var(--gray);cursor:pointer;text-decoration:underline" onclick="toggleProjectEdit('${editId}')">✏️ Edit</span>`}
@@ -171,13 +163,13 @@ async function toggleProjectHistory(project, histId) {
     el.dataset.loaded = '1';
     el.innerHTML = history.length ? history.map(h => {
       const isAuto = h.changed_by === 'Tự động (tổng kết tuần)';
-      const tag = isAuto ? '📋 Tổng kết tuần (tự động)' : (h.reported_dept ? (DEPT_LABEL[h.reported_dept]||h.reported_dept) : '—');
+      const tag = isAuto ? '📋 Tổng kết tuần (tự động)' : esc(deptLabel(h.reported_dept));
       return `
       <div style="padding:6px 0;border-bottom:1px solid var(--border)${isAuto?';background:var(--s2)':''}">
         <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--gray)">${h.date ? new Date(h.date).toLocaleString('vi-VN') : '—'} · ${tag}</div>
-        <div style="margin-top:2px">RAG: <b>${h.rag||'—'}</b> · Giai đoạn: <b>${h.phase||'—'}</b>${h.picdept?` · PIC: <b>${h.picdept}</b>`:''}</div>
-        ${h.issue ? `<div>Vấn đề: ${String(h.issue).replace(/\n/g,'<br>')}</div>` : ''}
-        ${h.target ? `<div>Mục tiêu: ${h.target}</div>` : ''}
+        <div style="margin-top:2px">RAG: <b>${esc(h.rag||'—')}</b> · Giai đoạn: <b>${esc(h.phase||'—')}</b>${h.picdept?` · PIC: <b>${esc(h.picdept)}</b>`:''}</div>
+        ${h.issue ? `<div>Vấn đề: ${formatIssueHtml(h.issue)}</div>` : ''}
+        ${h.target ? `<div>Mục tiêu: ${esc(h.target)}</div>` : ''}
       </div>`;
     }).join('') : '<div style="color:var(--gray)">Chưa có lịch sử thay đổi nào</div>';
   }
@@ -197,8 +189,9 @@ async function saveProjectEdit(project, editId, btn) {
     const res = await apiPost({ action: 'updateProject', project, rag, phase, issue, picdept, target, reportedDept });
     if (res.status !== 'ok') { toast(res.message || 'Lỗi lưu dự án', 'err'); btn.disabled = false; btn.textContent = 'Lưu'; return; }
     toast('✓ Đã cập nhật ' + project);
-    const proj = allData.proj.find(p => p.name === project);
-    if (proj) { proj.rag = rag; proj.phase = phase; proj.issue = issue; proj.picdept = picdept; proj.target = target; }
+    // Vấn đề giờ được backend GỘP THÊM (không đè) — phải load lại từ sheet để có đúng
+    // nội dung đã gộp, không tự gán "issue" (chỉ là phần mới vừa gõ) đè lên local state.
+    allData.proj = await apiGet('projects');
     renderMeetingBlocks();
   } catch (e) {
     toast('Lỗi lưu dự án', 'err');

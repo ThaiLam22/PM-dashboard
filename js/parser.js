@@ -253,7 +253,7 @@ function parseReport() {
   // Render preview
   const we = /mưa/i.test(weather)?'🌧':/nắng/i.test(weather)?'☀️':'⛅';
   const worksHtml = works.length
-    ? `<ul style="margin-left:18px;font-size:11px;line-height:1.6">${works.map(w => `<li>${w}</li>`).join('')}</ul>`
+    ? `<ul style="margin-left:18px;font-size:11px;line-height:1.6">${works.map(w => `<li>${esc(w)}</li>`).join('')}</ul>`
     : '<span style="color:var(--gray)">Không có</span>';
 
   const progressTblHtml = progressItems.length ? `
@@ -261,9 +261,9 @@ function parseReport() {
       <thead><tr><th>Hạng mục</th><th>KH bắt đầu</th><th>KH kết thúc</th><th>%</th></tr></thead>
       <tbody>
         ${progressItems.map(p => `<tr>
-          <td>${p.item}</td>
-          <td style="font-family:monospace;font-size:10px">${p.startPlan}</td>
-          <td style="font-family:monospace;font-size:10px">${p.finishPlan}</td>
+          <td>${esc(p.item)}</td>
+          <td style="font-family:monospace;font-size:10px">${esc(p.startPlan)}</td>
+          <td style="font-family:monospace;font-size:10px">${esc(p.finishPlan)}</td>
           <td style="font-weight:700;color:${bColor(p.pct)}">${p.pct}%</td>
         </tr>`).join('')}
       </tbody>
@@ -271,22 +271,22 @@ function parseReport() {
 
   document.getElementById('parse-preview').innerHTML = `
     <div style="font-weight:700;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border)">
-      ${project} · Tuần ${week} · ${date}
+      ${esc(project)} · Tuần ${esc(week)} · ${esc(date)}
     </div>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
-      <div><div style="font-size:9px;font-weight:700;color:var(--gray);margin-bottom:3px">THỜI TIẾT</div><span style="font-size:12px">${we} ${weather}</span></div>
+      <div><div style="font-size:9px;font-weight:700;color:var(--gray);margin-bottom:3px">THỜI TIẾT</div><span style="font-size:12px">${we} ${esc(weather)}</span></div>
       <div><div style="font-size:9px;font-weight:700;color:var(--gray);margin-bottom:3px">NHÂN LỰC</div><span style="font-size:12px"><strong>${totalBch + workers}</strong> (BCH ${totalBch} · CN ${workers})</span></div>
     </div>
 
     ${bchDetail ? `<div style="margin-bottom:10px"><div style="font-size:9px;font-weight:700;color:var(--gray);margin-bottom:5px">BCH CHI TIẾT</div>
-      <div class="bch-row">${bchDetail.split('|').map(b => `<span class="bch-chip">${b.replace(':',': ')}</span>`).join('')}</div>
+      <div class="bch-row">${bchDetail.split('|').map(b => `<span class="bch-chip">${esc(b.replace(':',': '))}</span>`).join('')}</div>
     </div>` : ''}
 
     <div style="margin-bottom:10px"><div style="font-size:9px;font-weight:700;color:var(--gray);margin-bottom:5px">CÔNG VIỆC</div>${worksHtml}</div>
 
-    ${materials && materials !== 'Không' ? `<div style="margin-bottom:6px;font-size:11px">📦 Vật tư: ${materials}</div>` : ''}
-    ${issues ? `<div style="margin-bottom:10px;font-size:11px;color:var(--accent)">🚨 ${issues}</div>` : ''}
+    ${materials && materials !== 'Không' ? `<div style="margin-bottom:6px;font-size:11px">📦 Vật tư: ${esc(materials)}</div>` : ''}
+    ${issues ? `<div style="margin-bottom:10px;font-size:11px;color:var(--accent)">🚨 ${esc(issues)}</div>` : ''}
 
     <div style="margin-top:14px;padding-top:10px;border-top:1px solid var(--border)">
       <div style="font-size:9px;font-weight:700;color:var(--gray);margin-bottom:5px">BẢNG TIẾN ĐỘ (sẽ lưu vào sheet progress)</div>

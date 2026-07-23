@@ -5,7 +5,11 @@ let currentProject = '';
 let parsed = null; // { dailyRow, progressRows, meta }
 let currentUser = { role: 'pm', fullname: '', token: '' }; // không còn đăng nhập — ai vào cũng full quyền như PM
 let actionItems = [];
-const DEPT_LABEL = { pm:'PM', phaply:'Pháp lý', vattu:'Vật tư', hse:'HSE', kythuat:'Kỹ thuật', taichinh:'Tài chính', epc:'EPC', nhamay:'Nhà máy' };
+const DEPT_LABEL = { bd:'BD', bds:'BDs', dien:'Điện', ketcau:'Kết Cấu', pm:'PM', hseq:'HSEQ', muasam:'Mua sắm', legal:'Legal', taichinh:'Tài chính' };
+// Map phòng ban CŨ (trước khi đổi danh sách 2026-07) → nhãn mới, chỉ để hiển thị đẹp cho
+// action-item/lịch sử cũ. epc/nhamay không có tương đương rõ ràng nên giữ nguyên mã thô.
+const OLD_DEPT_LABEL = { phaply:'Legal', vattu:'Mua sắm', hse:'HSEQ', kythuat:'Điện' };
+function deptLabel(code) { return DEPT_LABEL[code] || OLD_DEPT_LABEL[code] || code || '—'; }
 
 // ── LOAD ALL ──
 async function loadAll() {
@@ -34,7 +38,7 @@ async function loadAll() {
       dupWarn.style.display = 'none';
     }
 
-    const opts = uniqueProj.map(p => `<option value="${p.name}">${p.name}${p.location ? ' (' + p.location + ')' : ''}</option>`).join('');
+    const opts = uniqueProj.map(p => `<option value="${esc(p.name)}">${esc(p.name)}${p.location ? ' (' + esc(p.location) + ')' : ''}</option>`).join('');
     document.getElementById('proj-select').innerHTML = '<option value="">-- Chọn dự án --</option>' + opts;
     document.getElementById('inp-project').innerHTML = '<option value="">-- Chọn --</option>' + opts;
     document.getElementById('export-project').innerHTML = '<option value="">-- Chọn --</option>' + opts;

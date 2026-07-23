@@ -164,7 +164,27 @@ let paymentsData = [];
 let actionItems = [];
 let fRag = 'all', fGd = 'all';
 let sKey = null, sDir = 1;
-const DEPT_LABEL = { pm:'PM', phaply:'Pháp lý', vattu:'Vật tư', hse:'HSE', kythuat:'Kỹ thuật', taichinh:'Tài chính', epc:'EPC', nhamay:'Nhà máy' };
+const DEPT_LABEL = { bd:'BD', bds:'BDs', dien:'Điện', ketcau:'Kết Cấu', pm:'PM', hseq:'HSEQ', muasam:'Mua sắm', legal:'Legal', taichinh:'Tài chính' };
+const OLD_DEPT_LABEL = { phaply:'Legal', vattu:'Mua sắm', hse:'HSEQ', kythuat:'Điện' };
+function deptLabel(code) { return DEPT_LABEL[code] || OLD_DEPT_LABEL[code] || code || '—'; }
+
+// esc() = escape HTML — bắt buộc dùng cho MỌI text tự do lấy từ sheet trước khi chèn vào
+// innerHTML, vì backend không còn token nên ai cũng ghi được vào sheet (xem CLAUDE.md).
+function esc(s) {
+  if (s === null || s === undefined) return '';
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+function formatIssueHtml(text) {
+  if (!text) return '';
+  return esc(text).split('\n').map(line =>
+    line.replace(/\(PIC: ([^)]+)\)\s*$/, '<span style="font-size:10px;padding:1px 6px;background:var(--blue-bg);color:var(--blue);border-radius:2px;margin-left:4px">PIC: $1</span>')
+  ).join('<br>');
+}
 
 async function apiGet(sheet) {
   const r = await fetch(`${API}?sheet=${encodeURIComponent(sheet)}`);
@@ -327,25 +347,25 @@ function render() {
     // Thanh toán
     const tt = calcPayments(p.name);
     const ttHtml = tt
-      ? tt.map(t => `<span class="bdg ${t.cls}">${t.label}${t.done ? ' ✓' : ''}</span>`).join(' ')
+      ? tt.map(t => `<span class="bdg ${t.cls}">${esc(t.label)}${t.done ? ' ✓' : ''}</span>`).join(' ')
       : '<span style="color:var(--ink3)">—</span>';
 
     // Vấn đề + PIC
     const vc = p.rag==='H' ? 'v-h' : p.rag==='M' ? 'v-m' : 'v-l';
     const vandeHtml = p.issue
-      ? `<div class="vande-cell ${vc}">🚨 ${String(p.issue).replace(/\n/g,'<br>')}</div>${p.picDept?`<div class="pic-pill">${p.picDept}</div>`:''}`
+      ? `<div class="vande-cell ${vc}">🚨 ${formatIssueHtml(p.issue)}</div>`
       : `<span class="vande-cell ${vc} ok">—</span>`;
 
     const rowId = 'ai-row-' + p.id;
     return `<tr class="data-row" onclick="openDashboard('${encodeURIComponent(p.name)}')">
       <td style="color:var(--ink3)"><span onclick="event.stopPropagation();toggleActionItems(this,'${rowId}')" style="cursor:pointer;display:inline-block;width:12px">▸</span>${p.id}</td>
-      <td><div style="font-weight:600;font-size:11px">${p.name}</div>
-          <div style="font-size:9px;color:var(--ink3)">${p.epc||''}${p.pm?' · '+p.pm:''}</div></td>
+      <td><div style="font-weight:600;font-size:11px">${esc(p.name)}</div>
+          <div style="font-size:9px;color:var(--ink3)">${esc(p.epc||'')}${p.pm?' · '+esc(p.pm):''}</div></td>
       <td><span class="rag ${rc}"><span class="dot ${dc}"></span>${rl}</span></td>
-      <td><span class="bdg ${gdCls}">${p.phase}</span></td>
+      <td><span class="bdg ${gdCls}">${esc(p.phase)}</span></td>
       <td>${ttHtml}</td>
       <td>${vandeHtml}</td>
-      <td class="target-cell">${p.target||'—'}</td>
+      <td class="target-cell">${esc(p.target||'—')}</td>
     </tr>
     <tr id="${rowId}-detail" style="display:none">
       <td colspan="7" style="background:var(--s2);padding:10px 16px 12px 34px">${actionItemDetailHtml(p.name)}</td>
@@ -357,10 +377,10 @@ function actionItemRowHtml(a) {
   const STATUS_LABEL = { open:'Chưa xử lý', in_progress:'Đang xử lý', done:'Đã xong' };
   const overdue = a.deadline && a.status !== 'done' && parseDMY(a.deadline) && parseDMY(a.deadline) < new Date();
   return `<div style="display:flex;gap:8px;padding:5px 0;border-bottom:.5px solid var(--border);font-size:11px;flex-wrap:wrap;${overdue?'color:var(--red)':''}">
-    <span style="flex:1;min-width:140px">${a.description||'—'}${overdue?' ⚠️ Quá hạn':''}</span>
-    <span class="bdg b-b">${DEPT_LABEL[a.department]||a.department||'—'}</span>
-    <span style="color:var(--ink3);min-width:60px">${a.deadline||'—'}</span>
-    <span>${STATUS_LABEL[a.status]||a.status||'—'}</span>
+    <span style="flex:1;min-width:140px">${esc(a.description||'—')}${overdue?' ⚠️ Quá hạn':''}</span>
+    <span class="bdg b-b">${esc(deptLabel(a.department))}</span>
+    <span style="color:var(--ink3);min-width:60px">${esc(a.deadline||'—')}</span>
+    <span>${esc(STATUS_LABEL[a.status]||a.status||'—')}</span>
   </div>`;
 }
 

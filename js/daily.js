@@ -30,25 +30,25 @@ function renderDaily() {
     const totalW = (parseInt(r.bch)||0) + (parseInt(r.worker)||0);
     const works = (r.works||'').split('|').filter(Boolean);
     const worksHtml = works.length
-      ? `<ul class="work-list">${works.map(w => `<li>${w}</li>`).join('')}</ul>` : '';
+      ? `<ul class="work-list">${works.map(w => `<li>${esc(w)}</li>`).join('')}</ul>` : '';
     return `
       <div class="feed-item">
         <div class="feed-hdr">
-          <span class="feed-title">${r.date} · Tuần ${r.week||'?'}</span>
-          <span class="feed-meta">${we2} ${r.weather||'—'} · ${totalW} người (BCH ${r.bch||0} · CN ${r.worker||0})</span>
+          <span class="feed-title">${esc(r.date)} · Tuần ${esc(r.week||'?')}</span>
+          <span class="feed-meta">${we2} ${esc(r.weather||'—')} · ${totalW} người (BCH ${esc(r.bch||0)} · CN ${esc(r.worker||0)})</span>
         </div>
         ${worksHtml}
-        ${r.materials && r.materials!=='Không' ? `<div style="font-size:11px;margin-top:5px;color:var(--gray)">📦 Vật tư: ${r.materials}</div>` : ''}
-        ${r.issues  && r.issues!=='Không'    ? `<div style="font-size:11px;margin-top:5px;color:var(--accent)">🚨 ${r.issues}</div>` : ''}
+        ${r.materials && r.materials!=='Không' ? `<div style="font-size:11px;margin-top:5px;color:var(--gray)">📦 Vật tư: ${esc(r.materials)}</div>` : ''}
+        ${r.issues  && r.issues!=='Không'    ? `<div style="font-size:11px;margin-top:5px;color:var(--accent)">🚨 ${esc(r.issues)}</div>` : ''}
       </div>`;
   }).join('') : '<div style="padding:24px;text-align:center;color:var(--gray)">Chưa có báo cáo nào</div>';
 
   document.getElementById('daily-content').innerHTML = `
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center">
       <span class="rag-pill rag-${rag}">${ragLabel}</span>
-      ${p.issue?`<span style="font-size:12px;color:var(--accent)">🚨 ${p.issue}</span>`:''}
-      ${p.picdept?`<span style="font-size:10px;padding:2px 8px;background:var(--blue-bg);color:var(--blue);border-radius:3px">PIC: ${p.picdept}</span>`:''}
-      ${p.target?`<span style="font-size:11px;color:var(--gray)">🎯 ${p.target}</span>`:''}
+      ${p.issue?`<span style="font-size:12px;color:var(--accent)">🚨 ${formatIssueHtml(p.issue)}</span>`:''}
+      ${p.picdept?`<span style="font-size:10px;padding:2px 8px;background:var(--blue-bg);color:var(--blue);border-radius:3px">PIC: ${esc(p.picdept)}</span>`:''}
+      ${p.target?`<span style="font-size:11px;color:var(--gray)">🎯 ${esc(p.target)}</span>`:''}
       <span style="margin-left:auto;font-size:11px;color:var(--gray)">COD: ${codDays}</span>
     </div>
     <div class="kpi-row">

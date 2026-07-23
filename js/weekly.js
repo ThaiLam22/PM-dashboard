@@ -10,7 +10,7 @@ function populateWeekFilter() {
   const sel = document.getElementById('week-filter');
   const current = sel.value;
   sel.innerHTML = '<option value="">Tất cả tuần</option>' +
-    weeks.map(w => `<option value="${w}" ${w == current ? 'selected' : ''}>Tuần ${w}</option>`).join('');
+    weeks.map(w => `<option value="${esc(w)}" ${w == current ? 'selected' : ''}>Tuần ${esc(w)}</option>`).join('');
 }
 
 function renderWeekly() {
@@ -60,7 +60,7 @@ function renderProgress(weekFilter) {
     const dSign = delta > 0 ? '+' : '';
     return `
       <div class="prog-row">
-        <span class="prog-name" title="${i.item}">${i.item}</span>
+        <span class="prog-name" title="${esc(i.item)}">${esc(i.item)}</span>
         <div class="bar-track">
           <div class="bar-fill" style="width:${Math.min(100,i.pct)}%;background:${clr}"></div>
           <div class="bar-plan-mark" style="left:${planMark}%" title="KH: ${i.pctPlan}%"></div>
@@ -68,15 +68,15 @@ function renderProgress(weekFilter) {
         <span class="prog-pct" style="color:${clr}">${i.pct}%</span>
         <span class="prog-plan">/ ${i.pctPlan}%</span>
         <span class="prog-delta ${dCls}" title="Δ = TT − KH">${dSign}${delta}%</span>
-        <span class="stag ${stagCls}">${i.statusLabel}</span>
+        <span class="stag ${stagCls}">${esc(i.statusLabel)}</span>
       </div>`;
   }).join('');
 
   document.getElementById('wtab-progress').innerHTML = `
     <div class="cod-bar">
-      <span>📅 <strong>COD Hợp đồng:</strong> ${codHD}</span>
+      <span>📅 <strong>COD Hợp đồng:</strong> ${esc(codHD)}</span>
       <span class="sep">|</span>
-      <span>🏁 <strong>COD Actual:</strong> ${codAct}</span>
+      <span>🏁 <strong>COD Actual:</strong> ${esc(codAct)}</span>
     </div>
     <div class="kpi-row" style="grid-template-columns:repeat(5,1fr);margin-bottom:16px">
       <div class="kpi b">
@@ -114,11 +114,11 @@ function renderPermits() {
 
   const tblHtml = rows.map(r => `
     <tr>
-      <td>${r.organization||'—'}</td>
-      <td>${r.docname||'—'}</td>
-      <td><span class="badge ${badgeClass(r.status)}">${r.status||'—'}</span></td>
-      <td>${r.date||'—'}</td>
-      <td style="color:var(--gray)">${r.note||'—'}</td>
+      <td>${esc(r.organization||'—')}</td>
+      <td>${esc(r.docname||'—')}</td>
+      <td><span class="badge ${badgeClass(r.status)}">${esc(r.status||'—')}</span></td>
+      <td>${esc(r.date||'—')}</td>
+      <td style="color:var(--gray)">${esc(r.note||'—')}</td>
     </tr>`).join('');
 
   document.getElementById('wtab-permits').innerHTML = `
@@ -145,11 +145,11 @@ function renderPayments() {
 
   const tblHtml = rows.map(r => `
     <tr>
-      <td>${r.paymentround||'—'}</td>
-      <td style="font-size:11px;color:var(--gray)">${r.condition||'—'}</td>
-      <td>${r.actualamount||'—'}</td>
-      <td><span class="badge ${badgeClass(r.approvalstatus)}">${r.approvalstatus||'—'}</span></td>
-      <td style="font-size:11px;color:var(--gray)">${r.note||'—'}</td>
+      <td>${esc(r.paymentround||'—')}</td>
+      <td style="font-size:11px;color:var(--gray)">${esc(r.condition||'—')}</td>
+      <td>${esc(r.actualamount||'—')}</td>
+      <td><span class="badge ${badgeClass(r.approvalstatus)}">${esc(r.approvalstatus||'—')}</span></td>
+      <td style="font-size:11px;color:var(--gray)">${esc(r.note||'—')}</td>
     </tr>`).join('');
 
   document.getElementById('wtab-payments').innerHTML = `
@@ -176,10 +176,10 @@ function renderDocs() {
 
   const tblHtml = rows.map(r => `
     <tr>
-      <td>${r.docname||'—'}</td>
-      <td><span class="badge ${badgeClass(r.status)}">${r.status||'—'}</span></td>
-      <td>${r.updateddate||'—'}</td>
-      <td style="font-size:11px;color:var(--gray)">${r.note||'—'}</td>
+      <td>${esc(r.docname||'—')}</td>
+      <td><span class="badge ${badgeClass(r.status)}">${esc(r.status||'—')}</span></td>
+      <td>${esc(r.updateddate||'—')}</td>
+      <td style="font-size:11px;color:var(--gray)">${esc(r.note||'—')}</td>
     </tr>`).join('');
 
   document.getElementById('wtab-docs').innerHTML = `
@@ -206,19 +206,19 @@ function renderHse() {
   const latest = rows[rows.length - 1];
   const tblHtml = rows.map(r => `
     <tr>
-      <td>Tuần ${r.week||'—'}</td>
-      <td>${r.date||'—'}</td>
-      <td>${r.manpower||'—'}</td>
-      <td>${r.manhours||'—'}</td>
-      <td><span class="badge ${+r.lti>0?'b-miss':'b-done'}">${r.lti||0}</span></td>
-      <td><span class="badge ${+r.accidents>0?'b-wait':'b-done'}">${r.accidents||0}</span></td>
-      <td style="font-size:11px;color:var(--gray)">${r.note||'—'}</td>
+      <td>Tuần ${esc(r.week||'—')}</td>
+      <td>${esc(r.date||'—')}</td>
+      <td>${esc(r.manpower||'—')}</td>
+      <td>${esc(r.manhours||'—')}</td>
+      <td><span class="badge ${+r.lti>0?'b-miss':'b-done'}">${esc(r.lti||0)}</span></td>
+      <td><span class="badge ${+r.accidents>0?'b-wait':'b-done'}">${esc(r.accidents||0)}</span></td>
+      <td style="font-size:11px;color:var(--gray)">${esc(r.note||'—')}</td>
     </tr>`).join('');
 
   document.getElementById('wtab-hse').innerHTML = `
     <div class="kpi-row" style="margin-bottom:16px">
-      <div class="kpi b"><div class="kpi-val">${latest.manpower||0}</div><div class="kpi-lbl">Nhân lực tuần mới nhất</div></div>
-      <div class="kpi g"><div class="kpi-val">${latest.manhours||0}</div><div class="kpi-lbl">Giờ công</div></div>
+      <div class="kpi b"><div class="kpi-val">${esc(latest.manpower||0)}</div><div class="kpi-lbl">Nhân lực tuần mới nhất</div></div>
+      <div class="kpi g"><div class="kpi-val">${esc(latest.manhours||0)}</div><div class="kpi-lbl">Giờ công</div></div>
       <div class="kpi r"><div class="kpi-val">${rows.reduce((s,r)=>s+(+r.lti||0),0)}</div><div class="kpi-lbl">LTI lũy kế</div></div>
       <div class="kpi y"><div class="kpi-val">${rows.reduce((s,r)=>s+(+r.accidents||0),0)}</div><div class="kpi-lbl">Tai nạn lũy kế</div></div>
     </div>
@@ -238,14 +238,14 @@ function renderMaterials() {
   }
   const tblHtml = rows.map(r => `
     <tr>
-      <td>${r.date||'—'}</td>
-      <td>Tuần ${r.week||'—'}</td>
-      <td><strong>${r.item||'—'}</strong></td>
-      <td>${r.quantity||'—'} ${r.unit||''}</td>
-      <td>${r.brand||'—'}</td>
-      <td>${r.supplier||'—'}</td>
-      <td><span class="badge ${badgeClass(r.quality_check)}">${r.quality_check||'—'}</span></td>
-      <td style="font-size:11px;color:var(--gray)">${r.note||'—'}</td>
+      <td>${esc(r.date||'—')}</td>
+      <td>Tuần ${esc(r.week||'—')}</td>
+      <td><strong>${esc(r.item||'—')}</strong></td>
+      <td>${esc(r.quantity||'—')} ${esc(r.unit||'')}</td>
+      <td>${esc(r.brand||'—')}</td>
+      <td>${esc(r.supplier||'—')}</td>
+      <td><span class="badge ${badgeClass(r.quality_check)}">${esc(r.quality_check||'—')}</span></td>
+      <td style="font-size:11px;color:var(--gray)">${esc(r.note||'—')}</td>
     </tr>`).join('');
 
   document.getElementById('wtab-materials').innerHTML = `
@@ -272,12 +272,12 @@ function renderAcceptance() {
   const fail = rows.filter(r => /fail/i.test(r.result||'')).length;
   const tblHtml = rows.map(r => `
     <tr>
-      <td>${r.date||'—'}</td>
-      <td>${r.item||'—'}</td>
-      <td><span class="badge ${/pass/i.test(r.result||'')?'b-done':/fixed/i.test(r.result||'')?'b-wait':'b-miss'}">${r.result||'—'}</span></td>
-      <td style="font-size:11px;color:var(--accent)">${r.issue||'—'}</td>
-      <td style="font-size:11px;color:var(--gray)">${r.resolution||'—'}</td>
-      <td style="font-size:11px;color:var(--gray)">${r.note||'—'}</td>
+      <td>${esc(r.date||'—')}</td>
+      <td>${esc(r.item||'—')}</td>
+      <td><span class="badge ${/pass/i.test(r.result||'')?'b-done':/fixed/i.test(r.result||'')?'b-wait':'b-miss'}">${esc(r.result||'—')}</span></td>
+      <td style="font-size:11px;color:var(--accent)">${esc(r.issue||'—')}</td>
+      <td style="font-size:11px;color:var(--gray)">${esc(r.resolution||'—')}</td>
+      <td style="font-size:11px;color:var(--gray)">${esc(r.note||'—')}</td>
     </tr>`).join('');
   document.getElementById('wtab-acceptance').innerHTML = `
     <div class="kpi-row" style="margin-bottom:16px">
@@ -305,12 +305,12 @@ function renderIssues() {
     const sevCls = r.severity==='high'?'b-miss':r.severity==='medium'?'b-wait':'b-na';
     return `
     <tr>
-      <td>${r.date||'—'}</td>
-      <td><span class="badge b-na">${r.type||'—'}</span></td>
-      <td style="font-size:11px">${r.description||'—'}</td>
-      <td style="font-size:11px;color:var(--green)">${r.resolution||'—'}</td>
-      <td style="font-size:11px;color:var(--gray)">${r.lesson||'—'}</td>
-      <td><span class="badge ${sevCls}">${r.severity||'—'}</span></td>
+      <td>${esc(r.date||'—')}</td>
+      <td><span class="badge b-na">${esc(r.type||'—')}</span></td>
+      <td style="font-size:11px">${esc(r.description||'—')}</td>
+      <td style="font-size:11px;color:var(--green)">${esc(r.resolution||'—')}</td>
+      <td style="font-size:11px;color:var(--gray)">${esc(r.lesson||'—')}</td>
+      <td><span class="badge ${sevCls}">${esc(r.severity||'—')}</span></td>
     </tr>`}).join('');
   document.getElementById('wtab-issues').innerHTML = `
     <div class="kpi-row" style="margin-bottom:16px">
