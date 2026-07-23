@@ -11,20 +11,6 @@
 
 <div class="toast" id="toast"></div>
 
-<div id="login-gate" style="position:fixed;inset:0;background:var(--paper);z-index:9998;display:flex;align-items:center;justify-content:center">
-  <div class="card" style="width:320px">
-    <div class="card-lbl">Đăng nhập — CME Solar</div>
-    <div class="form-grid" style="grid-template-columns:1fr">
-      <div class="fg"><label>Tài khoản</label><input type="text" id="login-username" onkeydown="if(event.key==='Enter')doLogin()"></div>
-      <div class="fg"><label>Mật khẩu</label><input type="password" id="login-password" onkeydown="if(event.key==='Enter')doLogin()"></div>
-    </div>
-    <div id="login-error" style="color:var(--accent);font-size:11px;margin-top:8px;display:none"></div>
-    <div class="btn-row">
-      <button class="btn btn-dark" style="width:100%" onclick="doLogin()">Đăng nhập</button>
-    </div>
-  </div>
-</div>
-
 <nav class="nav">
   <div class="nav-logo">CME<span>SOLAR</span></div>
   <div class="nav-tab active" id="tab-daily" onclick="goPage('daily',this)">📊 Daily</div>
@@ -36,8 +22,6 @@
     <select class="proj-select" id="proj-select" onchange="onProjectChange()">
       <option value="">-- Chọn dự án --</option>
     </select>
-    <span id="current-user-label" style="font-size:11px;color:#ccc"></span>
-    <button class="btn btn-ghost" style="padding:4px 10px;font-size:10px;color:#fff;border-color:#445" onclick="doLogout()">Đăng xuất</button>
     <div class="sync-dot" id="sync-dot"></div>
     <span id="sync-text">Đang tải...</span>
   </div>
@@ -190,6 +174,7 @@
   <div class="page-hdr">
     <h2>Họp tuần</h2>
     <p>Đi theo từng dự án — tồn đọng tự động còn nguyên tới khi xong, việc xong tự ẩn (xem lại qua "Xem lịch sử" của từng dự án)</p>
+    <button class="btn btn-ghost" id="meeting-toggle-all" onclick="toggleMeetingShowAll()" style="margin-top:8px">📋 Xem tất cả dự án</button>
   </div>
   <div id="meeting-project-blocks"></div>
 </div>

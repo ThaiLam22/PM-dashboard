@@ -40,8 +40,12 @@ function statusToCls(status) {
     'started_early': 'stag-early',
   }[status] || 'stag-risk';
 }
+function isWeekLocked() {
+  return new Date().getDay() === 0; // Chủ nhật (0) — khóa cả ngày, mở lại 00:00 Thứ 2
+}
 function parseDateDMY(value) {
   if (!value) return new Date(0);
+  value = String(value);
   const m = value.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
   if (m) {
     const y = m[3].length === 2 ? '20'+m[3] : m[3];

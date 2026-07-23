@@ -15,6 +15,14 @@ function groupActionItemsByProject() {
 }
 
 const STATUS_LABEL = { open:'Chưa xử lý', in_progress:'Đang xử lý', done:'Đã xong' };
+let meetingShowAll = false;
+
+function toggleMeetingShowAll() {
+  meetingShowAll = !meetingShowAll;
+  const btn = document.getElementById('meeting-toggle-all');
+  if (btn) btn.textContent = meetingShowAll ? '📌 Chỉ xem dự án đang chọn' : '📋 Xem tất cả dự án';
+  renderMeetingBlocks();
+}
 
 function meetingItemRowHtml(r) {
   const overdue = isOverdue(r);
@@ -44,7 +52,9 @@ function toggleMeetingHistory(id) {
 function renderMeetingBlocks() {
   const grouped = groupActionItemsByProject();
   const isPm = currentUser.role === 'pm';
-  const projects = allData.proj || [];
+  const allProjects = allData.proj || [];
+  const projects = meetingShowAll ? allProjects : allProjects.filter(p => p.name === currentProject);
+  const locked = isWeekLocked();
 
   const blocksHtml = projects.map(p => {
     // Mọi vai trò đều thấy hết dự án (để sửa được rag/issue/picdept/target bất kỳ lúc nào),
@@ -75,6 +85,18 @@ function renderMeetingBlocks() {
               ${['Pre','CON','O&M','EPC'].map(ph => `<option value="${ph}" ${p.phase===ph?'selected':''}>${ph}</option>`).join('')}
             </select>
           </div>
+          <div class="fg"><label>Bộ phận nhập</label>
+            <select class="pe-reporteddept">
+              <option value="pm">PM</option>
+              <option value="phaply">Pháp lý</option>
+              <option value="vattu">Vật tư</option>
+              <option value="hse">HSE</option>
+              <option value="kythuat">Kỹ thuật</option>
+              <option value="taichinh">Tài chính</option>
+              <option value="epc">EPC</option>
+              <option value="nhamay">Nhà máy</option>
+            </select>
+          </div>
           <div class="fg span2"><label>Vấn đề</label><input type="text" class="pe-issue" value="${String(p.issue||'').replace(/"/g,'&quot;')}"></div>
           <div class="fg"><label>PIC Dept</label><input type="text" class="pe-picdept" value="${String(p.picdept||'').replace(/"/g,'&quot;')}"></div>
           <div class="fg"><label>Mục tiêu</label><input type="text" class="pe-target" value="${String(p.target||'').replace(/"/g,'&quot;')}"></div>
@@ -103,10 +125,12 @@ function renderMeetingBlocks() {
           <span class="rag-pill rag-${rag}">${ragLbl}</span>
           <strong style="font-size:13px">${p.name}</strong>
           <span class="badge b-na">${p.phase||'—'}</span>
-          ${p.issue?`<span style="font-size:12px;color:var(--accent)">🚨 ${p.issue}</span>`:''}
+          ${p.issue?`<div style="font-size:12px;color:var(--accent)">🚨 ${String(p.issue).replace(/\n/g,'<br>')}</div>`:''}
           ${p.picdept?`<span style="font-size:10px;padding:2px 8px;background:var(--blue-bg);color:var(--blue);border-radius:3px">${p.picdept}</span>`:''}
           <span style="margin-left:auto;font-size:11px;color:var(--gray);cursor:pointer;text-decoration:underline" onclick="toggleProjectHistory('${p.name.replace(/'/g,"\\'")}', '${editId}-hist')">📜 Lịch sử dự án</span>
-          <span style="font-size:11px;color:var(--gray);cursor:pointer;text-decoration:underline" onclick="toggleProjectEdit('${editId}')">✏️ Edit</span>
+          ${locked
+            ? `<span style="font-size:11px;color:var(--gray)">🔒 Đã khóa</span>`
+            : `<span style="font-size:11px;color:var(--gray);cursor:pointer;text-decoration:underline" onclick="toggleProjectEdit('${editId}')">✏️ Edit</span>`}
         </div>
         ${editFormHtml}
         <div id="${editId}-hist" style="display:none;margin:8px 0;padding:10px 12px;background:var(--s2);border-radius:6px;font-size:12px"></div>
@@ -120,7 +144,10 @@ function renderMeetingBlocks() {
       </div>`;
   }).join('');
 
-  document.getElementById('meeting-project-blocks').innerHTML = blocksHtml || '<div style="padding:24px;text-align:center;color:var(--gray)">Chưa có dự án hoặc action-item nào phù hợp</div>';
+  const lockBannerHtml = locked
+    ? `<div style="padding:10px 14px;margin-bottom:14px;background:var(--red-bg);color:var(--accent);border-radius:6px;font-size:12px">🔒 Đã khóa chỉnh sửa RAG/Giai đoạn/Vấn đề/PIC/Mục tiêu cho Chủ nhật — mở lại từ 00:00 Thứ 2.</div>`
+    : '';
+  document.getElementById('meeting-project-blocks').innerHTML = lockBannerHtml + (blocksHtml || '<div style="padding:24px;text-align:center;color:var(--gray)">Chưa có dự án hoặc action-item nào phù hợp</div>');
 }
 
 async function loadMeeting() {
@@ -142,26 +169,32 @@ async function toggleProjectHistory(project, histId) {
     el.textContent = 'Đang tải...';
     const history = await apiGetProjectHistory(project);
     el.dataset.loaded = '1';
-    el.innerHTML = history.length ? history.map(h => `
-      <div style="padding:6px 0;border-bottom:1px solid var(--border)">
-        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--gray)">${h.date ? new Date(h.date).toLocaleString('vi-VN') : '—'} · ${h.changed_by || '—'}</div>
+    el.innerHTML = history.length ? history.map(h => {
+      const isAuto = h.changed_by === 'Tự động (tổng kết tuần)';
+      const tag = isAuto ? '📋 Tổng kết tuần (tự động)' : (h.reported_dept ? (DEPT_LABEL[h.reported_dept]||h.reported_dept) : '—');
+      return `
+      <div style="padding:6px 0;border-bottom:1px solid var(--border)${isAuto?';background:var(--s2)':''}">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--gray)">${h.date ? new Date(h.date).toLocaleString('vi-VN') : '—'} · ${tag}</div>
         <div style="margin-top:2px">RAG: <b>${h.rag||'—'}</b> · Giai đoạn: <b>${h.phase||'—'}</b>${h.picdept?` · PIC: <b>${h.picdept}</b>`:''}</div>
-        ${h.issue ? `<div>Vấn đề: ${h.issue}</div>` : ''}
+        ${h.issue ? `<div>Vấn đề: ${String(h.issue).replace(/\n/g,'<br>')}</div>` : ''}
         ${h.target ? `<div>Mục tiêu: ${h.target}</div>` : ''}
-      </div>`).join('') : '<div style="color:var(--gray)">Chưa có lịch sử thay đổi nào</div>';
+      </div>`;
+    }).join('') : '<div style="color:var(--gray)">Chưa có lịch sử thay đổi nào</div>';
   }
 }
 
 async function saveProjectEdit(project, editId, btn) {
+  if (isWeekLocked()) { toast('Đã khóa cuối tuần — mở lại từ 00:00 Thứ 2', 'err'); return; }
   const wrap = document.getElementById(editId);
   const rag = wrap.querySelector('.pe-rag').value;
   const phase = wrap.querySelector('.pe-phase').value;
   const issue = wrap.querySelector('.pe-issue').value.trim();
   const picdept = wrap.querySelector('.pe-picdept').value.trim();
   const target = wrap.querySelector('.pe-target').value.trim();
+  const reportedDept = wrap.querySelector('.pe-reporteddept').value;
   btn.disabled = true; btn.textContent = 'Đang lưu...';
   try {
-    const res = await apiPost({ action: 'updateProject', project, rag, phase, issue, picdept, target });
+    const res = await apiPost({ action: 'updateProject', project, rag, phase, issue, picdept, target, reportedDept });
     if (res.status !== 'ok') { toast(res.message || 'Lỗi lưu dự án', 'err'); btn.disabled = false; btn.textContent = 'Lưu'; return; }
     toast('✓ Đã cập nhật ' + project);
     const proj = allData.proj.find(p => p.name === project);

@@ -3,7 +3,7 @@ const API = 'https://script.google.com/macros/s/AKfycbxOqrw7USflAwjS0k8mdQATs1PA
 let allData = {};
 let currentProject = '';
 let parsed = null; // { dailyRow, progressRows, meta }
-let currentUser = null; // { token, role, fullname, expiresAt }
+let currentUser = { role: 'pm', fullname: '', token: '' }; // không còn đăng nhập — ai vào cũng full quyền như PM
 let actionItems = [];
 const DEPT_LABEL = { pm:'PM', phaply:'Pháp lý', vattu:'Vật tư', hse:'HSE', kythuat:'Kỹ thuật', taichinh:'Tài chính', epc:'EPC', nhamay:'Nhà máy' };
 
@@ -67,6 +67,7 @@ async function onProjectChange() {
   populateWeekFilter();
   renderDaily();
   renderWeekly();
+  renderMeetingBlocks();
 }
 
 function onWeekFilterChange() {
@@ -74,7 +75,4 @@ function onWeekFilterChange() {
 }
 
 // ── KHỞI ĐỘNG APP — phải load sau cùng, sau khi mọi file .js khác đã có mặt ──
-(function initAuth() {
-  const session = loadSession();
-  if (session) startApp();
-})();
+loadAll();
